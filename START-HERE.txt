@@ -1,0 +1,18 @@
+ZAMU — YOUR COMPLETE STORE
+==========================
+
+You just extracted one folder: zamu-store
+
+Everything is inside (code, database, photos, orders, settings).
+
+>>> NEXT STEP: open the file  RUN-ON-YOUR-PC.md  and follow it —
+    it is short and written in plain language.
+
+Quick version (after installing Node.js + Bun once):
+    1. bun install
+    2. bun run db:generate
+    3. bun run dev
+    → open http://localhost:3000 in your browser
+
+Your admin login is the same one you already use.
+No internet needed after the first install — the store runs fully on your PC.
