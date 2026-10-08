@@ -1,0 +1,149 @@
+import type { Metadata } from 'next'
+import fs from 'fs'
+import path from 'path'
+import { computeVolumes } from '@/lib/download-volumes'
+
+export const metadata: Metadata = {
+  title: 'Download your store',
+  description: 'Download the complete ZAMU store package to run on your own PC.',
+}
+
+export const dynamic = 'force-dynamic'
+
+function mb(bytes: number): string {
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
+export default function DownloadPage() {
+  const plan = computeVolumes()
+  const zipPath = path.join(process.cwd(), 'public', 'tibeb-store.zip')
+  let zipSize: string | null = null
+  try {
+    const s = fs.statSync(zipPath)
+    if (s.size > 100_000) zipSize = mb(s.size)
+  } catch {
+    /* not built yet — route self-heals on first download */
+  }
+
+  return (
+    <main className="min-h-screen bg-cream text-ink">
+      <div className="mx-auto max-w-3xl px-5 py-10 sm:py-16">
+        {/* header */}
+        <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
+          ZAMU · owner tools
+        </p>
+        <h1 className="mt-3 font-display text-5xl uppercase leading-[0.95] sm:text-7xl">
+          Download
+          <br />
+          your store
+        </h1>
+        <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
+          The complete package: all code, your database (products, orders, payment
+          proofs, settings) and photos. It runs on your own PC with three commands —
+          no internet needed after install.
+        </p>
+
+        {/* primary: single file */}
+        <section className="mt-10 border border-ink bg-white">
+          <div className="border-b border-ink bg-ink px-5 py-2">
+            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-cream">
+              Option 1 · single file · recommended
+            </p>
+          </div>
+          <div className="px-5 py-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="font-display text-2xl uppercase">tibeb-store.zip</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {zipSize ? `One small file, about ${zipSize}.` : 'One small file.'}{' '}
+                  Everything included.
+                </p>
+              </div>
+              <a
+                href="/api/download/store"
+                className="bg-ink px-6 py-3 font-display text-lg uppercase tracking-wide text-cream transition-colors hover:bg-sale"
+              >
+                Download zip
+              </a>
+            </div>
+            <ol className="mt-6 space-y-2 text-sm text-muted-foreground">
+              <li>
+                <span className="font-mono text-ink">1.</span> Download the file.
+              </li>
+              <li>
+                <span className="font-mono text-ink">2.</span> Right-click it →{' '}
+                <span className="text-ink">Extract All</span> — you get one folder{' '}
+                <span className="font-mono text-ink">zamu-store</span>.
+              </li>
+              <li>
+                <span className="font-mono text-ink">3.</span> Open{' '}
+                <span className="text-ink">RUN-ON-YOUR-PC.md</span> inside that folder
+                and follow it.
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        {/* backup: volumes */}
+        <section className="mt-8 border border-border bg-white">
+          <div className="border-b border-border px-5 py-2">
+            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              Option 2 · split into parts · only if option 1 fails
+            </p>
+          </div>
+          <div className="px-5 py-6">
+            {plan ? (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Download <span className="font-semibold text-ink">all {plan.volumes.length} parts</span>{' '}
+                  into the same folder, then right-click each one → Extract All into that
+                  same folder. They merge back into one <span className="font-mono">zamu-store</span>{' '}
+                  folder automatically — no command line needed.
+                </p>
+                <ul className="mt-5 divide-y divide-border border border-border">
+                  {plan.volumes.map((v) => (
+                    <li key={v.n}>
+                      <a
+                        href={`/api/download/store?v=${v.n}`}
+                        className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-sand"
+                      >
+                        <span className="flex items-center gap-4">
+                          <span className="flex h-9 w-9 items-center justify-center bg-ink font-display text-lg text-cream">
+                            {v.n}
+                          </span>
+                          <span>
+                            <span className="block text-sm font-semibold">
+                              Part {v.n} of {plan.volumes.length}
+                            </span>
+                            <span className="block text-xs text-muted-foreground">
+                              {v.label} · up to {mb(v.bytes)}
+                            </span>
+                          </span>
+                        </span>
+                        <span className="font-mono text-xs uppercase tracking-wider text-sale">
+                          download ↓
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Parts are prepared on the server — open{' '}
+                <span className="font-mono text-ink">/api/download/store?vinfo=1</span> to
+                list them.
+              </p>
+            )}
+          </div>
+        </section>
+
+        {/* troubleshooting */}
+        <p className="mt-8 text-xs leading-relaxed text-muted-foreground">
+          If a link shows an error, wait a minute and refresh — the server rebuilds
+          missing packages by itself. Still stuck? Ask the assistant in chat.
+        </p>
+      </div>
+    </main>
+  )
+}

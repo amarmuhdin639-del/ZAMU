@@ -1,0 +1,121 @@
+import { NextRequest, NextResponse } from 'next/server'
+import fs from 'fs'
+import path from 'path'
+import { Readable } from 'stream'
+import { execSync } from 'child_process'
+import { computeVolumes, buildVolumeZip } from '@/lib/download-volumes'
+
+// Serves the owner's full store package (tibeb-store.zip) for download to their PC.
+// If the file is missing (sandbox wipes gitignored/untracked files), it is
+// regenerated straight from git HEAD on the fly — self-healing by design.
+//
+// ?part=N  → streams byte-slice N (1-based) of the zip as tibeb-store.zip.partN
+//            (last-resort: needs rejoining on the owner's PC)
+// ?info=1  → JSON { size, partSize, parts }
+// ?v=N     → streams volume N as a STANDALONE valid zip (tibeb-store-partN-of-M.zip);
+//            the owner extracts every volume into the same folder — they merge into
+//            zamu-store/ with no command line needed. Primary small-file option.
+// ?vinfo=1 → JSON volume plan { volumes: [{n, files, label}] }
+
+const FILE = path.join(process.cwd(), 'public', 'tibeb-store.zip')
+const PART_SIZE = 1 * 1024 * 1024 // 1 MB — last-resort byte slices
+
+function ensureZip(): string | null {
+  try {
+    if (fs.existsSync(FILE) && fs.statSync(FILE).size > 1_000_000) return FILE
+    // regenerate from the committed tree into public/
+    execSync('git archive --prefix="zamu-store/" --format=zip -o public/tibeb-store.zip HEAD', {
+      cwd: process.cwd(),
+      stdio: 'pipe',
+      timeout: 60_000,
+    })
+    return fs.existsSync(FILE) ? FILE : null
+  } catch (e) {
+    console.error('download/store regenerate failed', e)
+    return null
+  }
+}
+
+export async function GET(req: NextRequest) {
+  const file = ensureZip()
+  if (!file) {
+    return NextResponse.json({ error: 'Package could not be prepared. Ask the assistant to rebuild it.' }, { status: 500 })
+  }
+  const stat = fs.statSync(file)
+  const totalParts = Math.ceil(stat.size / PART_SIZE)
+
+  const info = req.nextUrl.searchParams.get('info')
+  if (info) {
+    return NextResponse.json({ size: stat.size, partSize: PART_SIZE, parts: totalParts })
+  }
+
+  const vinfo = req.nextUrl.searchParams.get('vinfo')
+  if (vinfo) {
+    const plan = computeVolumes()
+    if (!plan) {
+      return NextResponse.json({ error: 'git tree unavailable' }, { status: 500 })
+    }
+    return NextResponse.json({
+      zip: stat.size,
+      totalFiles: plan.totalFiles,
+      volumes: plan.volumes.map((v) => ({ n: v.n, files: v.files, label: v.label })),
+    })
+  }
+
+  const volParam = req.nextUrl.searchParams.get('v')
+  if (volParam) {
+    const plan = computeVolumes()
+    const vol = plan?.volumes.find((x) => x.n === Number(volParam))
+    if (!vol) {
+      return NextResponse.json(
+        { error: `v must be 1..${plan?.volumes.length ?? '?'}` },
+        { status: 400 }
+      )
+    }
+    const volFile = buildVolumeZip(vol)
+    if (!volFile) {
+      return NextResponse.json({ error: 'volume could not be built' }, { status: 500 })
+    }
+    const volStat = fs.statSync(volFile)
+    const stream = Readable.toWeb(fs.createReadStream(volFile)) as ReadableStream
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'application/zip',
+        'Content-Length': String(volStat.size),
+        'Content-Disposition': `attachment; filename="tibeb-store-part${vol.n}-of-${plan!.volumes.length}.zip"`,
+        'X-Volume-Files': String(vol.files),
+        'Cache-Control': 'no-store',
+      },
+    })
+  }
+
+  const partParam = req.nextUrl.searchParams.get('part')
+  if (partParam) {
+    const part = Number(partParam)
+    if (!Number.isInteger(part) || part < 1 || part > totalParts) {
+      return NextResponse.json({ error: `part must be 1..${totalParts}` }, { status: 400 })
+    }
+    const start = (part - 1) * PART_SIZE
+    const end = Math.min(start + PART_SIZE, stat.size)
+    const stream = Readable.toWeb(fs.createReadStream(file, { start, end: end - 1 })) as ReadableStream
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'application/octet-stream',
+        'Content-Length': String(end - start),
+        'Content-Disposition': `attachment; filename="tibeb-store.zip.part${part}"`,
+        'X-Total-Parts': String(totalParts),
+        'Cache-Control': 'no-store',
+      },
+    })
+  }
+
+  const stream = Readable.toWeb(fs.createReadStream(file)) as ReadableStream
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'application/zip',
+      'Content-Length': String(stat.size),
+      'Content-Disposition': 'attachment; filename="tibeb-store.zip"',
+      'Cache-Control': 'no-store',
+    },
+  })
+}
