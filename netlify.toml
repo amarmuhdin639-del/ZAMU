@@ -1,0 +1,10 @@
+# Netlify configuration for the ZAMU store
+# Secrets (TURSO_DATABASE_URL / TURSO_AUTH_TOKEN) are NOT set here —
+# add them in Netlify dashboard → Site configuration → Environment variables.
+
+[build]
+  command = "bun run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
