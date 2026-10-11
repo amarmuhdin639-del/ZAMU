@@ -76,6 +76,10 @@ async function runCommit() {
  * Safe to call as often as you like — calls collapse into one commit.
  */
 export function persistData(): void {
+  // Cloud mode (Turso database / Netlify): the data lives outside this
+  // filesystem, so there is nothing to snapshot — and spawning `git` inside
+  // a serverless function would just burn time. No-op.
+  if (process.env.NETLIFY === 'true' || process.env.TURSO_DATABASE_URL) return
   try {
     if (timer) clearTimeout(timer)
     const since = Date.now() - lastRun
