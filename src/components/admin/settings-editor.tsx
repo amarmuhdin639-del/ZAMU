@@ -56,18 +56,30 @@ export function AdminSettings() {
   const [heroImageUploading, setHeroImageUploading] = useState(false)
 
   const load = useCallback(async () => {
+    const getJson = async (url: string) => {
+      // Safe loader: one broken or missing endpoint can no longer freeze the
+      // whole settings page — every section loads independently.
+      try {
+        const r = await fetch(url)
+        const text = await r.text()
+        return text.trim() ? JSON.parse(text) : {}
+      } catch {
+        console.warn(`Could not load ${url}`)
+        return {}
+      }
+    }
     const [s, pm, dz, dc, bn] = await Promise.all([
-      fetch('/api/admin/settings').then((r) => r.json()),
-      fetch('/api/admin/payment-methods').then((r) => r.json()),
-      fetch('/api/admin/delivery-zones').then((r) => r.json()),
-      fetch('/api/admin/discounts').then((r) => r.json()),
-      fetch('/api/admin/banners').then((r) => r.json()),
+      getJson('/api/admin/settings'),
+      getJson('/api/admin/payment-methods'),
+      getJson('/api/admin/delivery-zones'),
+      getJson('/api/admin/discounts'),
+      getJson('/api/admin/banners'),
     ])
-    setSettings(s.settings ?? {})
-    setMethods(pm.methods ?? [])
-    setZones(dz.zones ?? [])
-    setDiscounts(dc.discounts ?? [])
-    setBanners(bn.banners ?? [])
+    setSettings(s?.settings ?? {})
+    setMethods(pm?.methods ?? [])
+    setZones(dz?.zones ?? [])
+    setDiscounts(dc?.discounts ?? [])
+    setBanners(bn?.banners ?? [])
     setLoaded(true)
   }, [])
 
