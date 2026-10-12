@@ -77,6 +77,32 @@ export function ProductForm({
     setForm((f) => ({ ...f, [k]: v }))
   }
 
+  // Live SKU availability hint — checks while typing so the owner never hits
+  // the "SKU already exists" wall after filling the whole form. Best-effort:
+  // any network problem just hides the hint.
+  const [skuCheck, setSkuCheck] = useState<{ sku: string; takenBy: string | null } | null>(null)
+  useEffect(() => {
+    const sku = form.sku.trim()
+    if (sku.length < 2) {
+      setSkuCheck(null)
+      return
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/admin/products?q=${encodeURIComponent(sku)}`)
+        if (!res.ok) return
+        const data = await jsonOrThrow<{ products?: { id: string; sku: string; name: string }[] }>(res)
+        const hit = (data.products ?? []).find(
+          (p) => p.sku.toUpperCase() === sku.toUpperCase() && p.id !== product?.id
+        )
+        setSkuCheck({ sku, takenBy: hit ? hit.name : null })
+      } catch {
+        /* hint is optional */
+      }
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [form.sku])
+
   async function upload(files: FileList | null) {
     if (!files?.length) return
     setUploading(true)
@@ -181,6 +207,11 @@ export function ProductForm({
             <div>
               <Label htmlFor="psku">{t('admin.form.sku')}</Label>
               <Input id="psku" required value={form.sku} onChange={(e) => set('sku', e.target.value.toUpperCase())} placeholder="TB-JRS-001" className="mt-1.5 font-mono" />
+              {skuCheck && skuCheck.sku === form.sku.trim() && (
+                skuCheck.takenBy
+                  ? <p className="mt-1 text-xs font-medium text-red-600">&#10007; {t('admin.form.skuTaken', { name: skuCheck.takenBy })}</p>
+                  : <p className="mt-1 text-xs font-medium text-emerald-600">&#10003; {t('admin.form.skuFree')}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="pcat">{t('admin.form.category')}</Label>

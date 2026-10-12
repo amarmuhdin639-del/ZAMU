@@ -55,7 +55,12 @@ export async function POST(req: NextRequest) {
     slug = `${baseSlug}-${i}`
   }
   const skuExists = await db.product.findUnique({ where: { sku: d.sku } })
-  if (skuExists) return NextResponse.json({ error: 'SKU already exists' }, { status: 409 })
+  if (skuExists) {
+    return NextResponse.json(
+      { error: `SKU "${d.sku}" is already used by "${skuExists.name}". Choose a different, unique SKU.` },
+      { status: 409 }
+    )
+  }
 
   const product = await db.product.create({
     data: {

@@ -9,6 +9,8 @@ export const LANGS: { code: Lang; label: string }[] = [
 ]
 
 export const DICT: Record<string, { en: string; am: string }> = {
+  'admin.form.skuFree': { en: 'Available — you can use this SKU', am: 'ክፍት ነው — ይህን SKU መጠቀም ይችላሉ' },
+  'admin.form.skuTaken': { en: 'Already used by: {name}', am: 'ይህ SKU ቀድሞ በሚከተለው ተይዟል: {name}' },
   // ---------- generic ----------
   'common.loading': { en: 'Loading…', am: 'በመጫን ላይ…' },
   'common.search': { en: 'Search', am: 'ፈልግ' },
