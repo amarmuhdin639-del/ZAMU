@@ -4,20 +4,29 @@ import type { SettingsMap } from '@/lib/queries'
 import { SETTING_DEFAULTS } from '@/lib/queries'
 import { T, LangSwitch } from '@/lib/i18n'
 import { PWAInstallButton } from '@/components/store/pwa'
+import { SocialRow } from '@/components/store/social-icons'
+import { parseSocialLinks } from '@/lib/social'
 
 const PAY_METHODS = ['Telebirr', 'CBE Birr', 'Bank Transfer']
 
 export function Footer({ settings }: { settings: SettingsMap }) {
   const site = settings.siteName || SETTING_DEFAULTS.siteName
+  const socials = parseSocialLinks(settings.socialLinks, {
+    whatsapp: settings.contactWhatsapp,
+    tiktok: settings.contactTiktok,
+    instagram: settings.contactInstagram,
+  })
   return (
-    <footer className="mt-auto bg-ink text-cream/90">
+    <footer className="mt-auto border-t border-border bg-ink text-cream/90">
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 gap-10 md:grid-cols-5">
           <div className="col-span-2 md:col-span-2">
-            <p className="wordmark text-3xl uppercase tracking-tight text-cream">
+            { }
+            <img src="/uploads/zamu-crown-logo.webp" alt={`${site} crown emblem`} className="h-16 w-16 object-contain" />
+            <p className="wordmark mt-3 text-3xl uppercase tracking-tight text-cream">
               {site}
-              <span className="ml-1 inline-block h-2 w-2 rounded-[2px] bg-flame align-top" />
             </p>
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.34em] text-cream/45">Clothing Co.</p>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-cream/60">
               <T k="footer.tagline" />
             </p>
@@ -28,7 +37,7 @@ export function Footer({ settings }: { settings: SettingsMap }) {
                 </span>
               ))}
             </div>
-            <div className="mt-5 flex flex-wrap items-center gap-3">
+            <div className="mt-5 flex flex-wrap items-center gap-4">
               <div>
                 <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-cream/40">
                   <T k="common.language" />
@@ -36,6 +45,10 @@ export function Footer({ settings }: { settings: SettingsMap }) {
                 <LangSwitch dark />
               </div>
               <PWAInstallButton />
+            </div>
+            <div className="mt-6">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-cream/40">Follow</p>
+              <SocialRow links={socials} />
             </div>
           </div>
 
@@ -97,12 +110,13 @@ export function Footer({ settings }: { settings: SettingsMap }) {
 
         <div className="mt-12 flex flex-col gap-4 border-t border-cream/10 pt-6 text-xs text-cream/50 sm:flex-row sm:items-center sm:justify-between">
           <p>
-            © {new Date().getFullYear()} {site}. <T k="footer.rights" />
+            © {new Date().getFullYear()} {site} · Clothing Co. <T k="footer.rights" />
             <span className="ml-1 select-none opacity-70 transition-opacity hover:opacity-100" title="RJA">
               · Made by <span className="font-bold tracking-wide">RJA</span>
             </span>
           </p>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <SocialRow links={socials} />
             {settings.contactPhone ? (
               <a href={`tel:${settings.contactPhone}`} className="flex items-center gap-1.5 hover:text-flame">
                 <Phone className="h-3.5 w-3.5" /> {settings.contactPhone}

@@ -6,7 +6,7 @@ export const SETTING_DEFAULTS: Record<string, string> = {
   announcement: 'FREE DELIVERY IN ADDIS ON ORDERS OVER 2,000 ETB · PAY WITH TELEBIRR, CBE BIRR OR BANK TRANSFER',
   heroTitle: 'WANTS &\nNEEDS.',
   heroSubtitle: 'Essential jerseys, baggy fits & streetwear — limited runs, packed and shipped by the family.',
-  heroImage: '', // optional photo; homepage shows the Z poster when empty
+  heroImage: '', // optional photo; homepage shows the crown emblem when empty
   heroVideo: '', // optional MP4/MOV/WEBM hero clip; overrides heroImage when set
   aboutTitle: 'A family thing.',
   aboutText:
@@ -15,15 +15,18 @@ export const SETTING_DEFAULTS: Record<string, string> = {
   contactEmail: 'hello@zamu.store',
   contactAddress: 'Addis Ababa, Ethiopia',
   contactWhatsapp: '+251900000000',
-  contactTelegram: 'zamustore',
+  contactTiktok: 'zamustore',
   contactInstagram: 'zamustore',
-  contactFacebook: 'zamustore',
+  // Social channels shown on the contact page + footer — editable in admin
+  // settings with an "Add social" option and a type picker (TikTok, Instagram,
+  // WhatsApp, Telegram, Facebook, YouTube, X, other). JSON: [{type,url}]
+  socialLinks: '[{"type":"whatsapp","url":"+251900000000"},{"type":"tiktok","url":"zamustore"},{"type":"instagram","url":"zamustore"}]',
   deliveryInfo:
     'Orders are delivered after payment is verified by our team. Addis Ababa orders are usually delivered within 1–2 days after verification. Other cities may take 3–5 working days. You can track your order anytime using your order number and phone number.',
   returnsPolicy:
-    'Exchanges are accepted for unworn items with tags attached. If you received a damaged or wrong item, contact us within 48 hours of delivery with a photo and your order number. Because every order is handled personally by the family, message us on WhatsApp or Telegram first — we always make it right. Custom or sale items may be final sale. Replace this text in your store settings with your real policy.',
+    'Exchanges are accepted for unworn items with tags attached. If you received a damaged or wrong item, contact us within 48 hours of delivery with a photo and your order number. Because every order is handled personally by the family, message us on WhatsApp first — we always make it right. Custom or sale items may be final sale. Replace this text in your store settings with your real policy.',
   privacyPolicy:
-    'We collect only the information needed to deliver your order: your name, phone number and delivery address. Payment screenshots are stored privately and are only visible to store administrators. We never sell or share your data with third parties. Replace this text in your store settings with your real policy.',
+    'We collect only the information needed to deliver your order: your name, phone number and delivery address (including the map pin location you choose at checkout). Payment screenshots are stored privately and are only visible to store administrators. We never sell or share your data with third parties. Replace this text in your store settings with your real policy.',
   termsText:
     'By placing an order you agree that payment must be verified by our team before the order is processed. Prices are listed in Ethiopian Birr and may change without notice. Product availability is not guaranteed until payment is verified. Replace this text in your store settings with your real terms.',
   flashSaleEndsAt: '', // ISO date string; empty = no active flash sale

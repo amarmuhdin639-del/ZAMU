@@ -34,7 +34,7 @@ export default async function AboutPage() {
               { icon: Heart, title: 'Family-run', text: 'Every order is checked and packed by the family — no faceless warehouse.' },
               { icon: ShieldCheck, title: 'Honest payments', text: 'We verify every payment by hand. No auto-approvals, no surprises.' },
               { icon: Truck, title: 'Fast Addis delivery', text: 'Orders move out right after verification — usually same or next day.' },
-              { icon: MessageCircle, title: 'Always reachable', text: 'Call, WhatsApp or Telegram — you talk directly to us.' },
+              { icon: MessageCircle, title: 'Always reachable', text: 'Call, WhatsApp or Instagram — you talk directly to us.' },
             ].map((v) => (
               <div key={v.title} className="rounded-xl bg-secondary/60 p-4">
                 <v.icon className="h-5 w-5 text-flame" />

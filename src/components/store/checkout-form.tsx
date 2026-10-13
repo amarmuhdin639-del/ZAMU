@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { SafeImage } from './media-box'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -8,6 +9,7 @@ import { useCart } from '@/lib/store'
 import { useLang } from '@/lib/i18n'
 import { formatPrice } from '@/lib/shared'
 import { saveOrder } from '@/lib/saved-orders'
+import { jsonOrThrow } from '@/lib/http'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,6 +19,12 @@ import { toast } from 'sonner'
 import { Tag, X } from 'lucide-react'
 import type { DeliveryZone } from '@prisma/client'
 import type { SafeUser } from '@/lib/auth'
+import type { PinValue } from './location-picker'
+
+const LocationPicker = dynamic(() => import('./location-picker'), {
+  ssr: false,
+  loading: () => <div className="mt-2 h-64 w-full animate-pulse rounded-xl bg-secondary sm:h-72" />,
+})
 
 type Props = {
   zones: DeliveryZone[]
@@ -34,6 +42,7 @@ export function CheckoutForm({ zones, user, deliveryNote }: Props) {
   const [codeInput, setCodeInput] = useState('')
   const [checkingCode, setCheckingCode] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [pin, setPin] = useState<PinValue>(null)
   const [form, setForm] = useState({
     customerName: user?.name ?? '',
     phone: user?.phone ?? '',
@@ -60,7 +69,7 @@ export function CheckoutForm({ zones, user, deliveryNote }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: codeInput.trim(), subtotal }),
       })
-      const data = await res.json()
+      const data = await jsonOrThrow<{ error?: string; code: string; discount: number }>(res)
       if (!res.ok) throw new Error(data.error)
       setDiscount({ code: data.code, discount: data.discount })
       toast.success(`${data.code} — ${formatPrice(data.discount)}`)
@@ -77,10 +86,17 @@ export function CheckoutForm({ zones, user, deliveryNote }: Props) {
       toast.error(t('cart.empty'))
       return
     }
-    if (!form.customerName || !form.phone || !form.city || !form.address) {
-      toast.error('Please fill in your name, phone, city and delivery address')
+    if (!form.customerName || !form.phone || !form.city) {
+      toast.error('Please fill in your name, phone and city')
       return
     }
+    if (!pin) {
+      toast.error(t('checkout.pinRequired'))
+      return
+    }
+    // The map pin replaces the typed address: coordinates first, optional
+    // house/landmark note after the dash.
+    const address = `Pin: ${pin.lat.toFixed(6)}, ${pin.lng.toFixed(6)}${form.address.trim() ? ` — ${form.address.trim()}` : ''}`
     setBusy(true)
     try {
       const res = await fetch('/api/orders', {
@@ -88,13 +104,14 @@ export function CheckoutForm({ zones, user, deliveryNote }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          address,
           notes: form.notes || undefined,
           deliveryZoneId: zoneId,
           discountCode: discount?.code ?? undefined,
           items: items.map((i) => ({ productId: i.productId, qty: i.qty, size: i.size, color: i.color })),
         }),
       })
-      const data = await res.json()
+      const data = await jsonOrThrow<{ error?: string; orderNumber: string }>(res)
       if (!res.ok) throw new Error(data.error ?? 'Could not place the order')
       // Remember the order on this device so the customer can track it
       // later without retyping the order number + phone.
@@ -113,7 +130,7 @@ export function CheckoutForm({ zones, user, deliveryNote }: Props) {
       <div className="mt-8 rounded-2xl border border-dashed border-border bg-card px-6 py-16 text-center">
         <p className="font-display text-xl uppercase">{t('checkout.emptyBag')}</p>
         <p className="mt-1 text-sm text-muted-foreground">{t('checkout.emptyBagText')}</p>
-        <Link href="/shop"><Button className="mt-5 rounded-full bg-ink px-8 text-xs uppercase tracking-wider hover:bg-flame">{t('checkout.goToShop')}</Button></Link>
+        <Link href="/shop"><Button className="mt-5 rounded-full bg-ink px-8 text-xs uppercase tracking-wider hover:bg-flame hover:text-ink">{t('checkout.goToShop')}</Button></Link>
       </div>
     )
   }
@@ -138,8 +155,11 @@ export function CheckoutForm({ zones, user, deliveryNote }: Props) {
               <Input id="city" required value={form.city} onChange={(e) => set('city', e.target.value)} placeholder="Addis Ababa" className="mt-1.5" />
             </div>
             <div className="sm:col-span-2">
-              <Label htmlFor="address">{t('checkout.address')} *</Label>
-              <Textarea id="address" required rows={2} value={form.address} onChange={(e) => set('address', e.target.value)} placeholder="Sub-city, woreda, house number, landmark…" className="mt-1.5" />
+              <LocationPicker value={pin} onChange={setPin} />
+            </div>
+            <div className="sm:col-span-2">
+              <Label htmlFor="address">{t('checkout.addressNote')}</Label>
+              <Textarea id="address" rows={2} value={form.address} onChange={(e) => set('address', e.target.value)} placeholder="House number, building, landmark…" className="mt-1.5" />
             </div>
             <div className="sm:col-span-2">
               <Label htmlFor="notes">{t('checkout.notes')}</Label>
@@ -156,11 +176,11 @@ export function CheckoutForm({ zones, user, deliveryNote }: Props) {
               <label
                 key={z.id}
                 className={`flex cursor-pointer items-center justify-between rounded-xl border p-4 transition-colors ${
-                  zoneId === z.id ? 'border-ink bg-secondary/60' : 'border-border bg-card hover:border-ink/40'
+                  zoneId === z.id ? 'border-flame bg-secondary/60' : 'border-border bg-card hover:border-flame/40'
                 }`}
               >
                 <span className="flex items-center gap-3">
-                  <input type="radio" name="zone" checked={zoneId === z.id} onChange={() => setZoneId(z.id)} className="h-4 w-4 accent-black" />
+                  <input type="radio" name="zone" checked={zoneId === z.id} onChange={() => setZoneId(z.id)} className="h-4 w-4 accent-[#c9c9d1]" />
                   <span>
                     <span className="block text-sm font-bold">{z.name}</span>
                     {z.estimatedDays ? <span className="block text-xs text-muted-foreground">{z.estimatedDays}</span> : null}
@@ -199,8 +219,8 @@ export function CheckoutForm({ zones, user, deliveryNote }: Props) {
           {/* discount code */}
           <div className="mt-5 border-t border-border pt-4">
             {discount ? (
-              <div className="flex items-center justify-between rounded-lg bg-[#4a7c59]/10 px-3 py-2.5 text-sm">
-                <span className="flex items-center gap-2 font-bold text-[#4a7c59]">
+              <div className="flex items-center justify-between rounded-lg bg-[#5fc690]/10 px-3 py-2.5 text-sm">
+                <span className="flex items-center gap-2 font-bold text-[#5fc690]">
                   <Tag className="h-3.5 w-3.5" /> {discount.code} — {formatPrice(discount.discount)} off
                 </span>
                 <button type="button" onClick={() => setDiscount(null)} aria-label="Remove code"><X className="h-4 w-4" /></button>
@@ -225,7 +245,7 @@ export function CheckoutForm({ zones, user, deliveryNote }: Props) {
               <dd className="font-semibold">{formatPrice(zone?.fee ?? 0)}</dd>
             </div>
             {discountAmount > 0 && (
-              <div className="flex justify-between text-[#4a7c59]">
+              <div className="flex justify-between text-[#5fc690]">
                 <dt>{t('checkout.discount')}</dt>
                 <dd className="font-semibold">-{formatPrice(discountAmount)}</dd>
               </div>

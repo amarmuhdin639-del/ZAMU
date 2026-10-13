@@ -9,25 +9,49 @@ import { Readable } from 'stream'
 // legacy disk copy under public/uploads/<path> and backfills the DB when a
 // file only exists on disk. Replaces static /uploads/* serving for new files.
 
+// Self-heal: if the MediaAsset table is missing on the database, every image
+// 404s (the lookup throws, the disk fallback finds nothing on serverless).
+// Create it once, idempotently, matching the prisma model exactly.
+const CREATE_MEDIA_TABLE = `CREATE TABLE IF NOT EXISTS "MediaAsset" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "path" TEXT NOT NULL UNIQUE,
+  "mime" TEXT NOT NULL,
+  "size" INTEGER NOT NULL,
+  "data" BLOB NOT NULL,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+)`
+
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
   const { path: parts } = await ctx.params
   const rel = parts.join('/')
 
   // 1) authoritative copy: the database
-  try {
+  const fromDb = async (): Promise<Response | null> => {
     const asset = await db.mediaAsset.findUnique({ where: { path: rel } })
-    if (asset) {
-      const bytes = Buffer.from(asset.data)
-      return new Response(new Uint8Array(bytes), {
-        headers: {
-          'Content-Type': asset.mime,
-          'Content-Length': String(bytes.length),
-          'Cache-Control': 'public, max-age=31536000, immutable',
-        },
-      })
-    }
+    if (!asset) return null
+    const bytes = Buffer.from(asset.data)
+    return new Response(new Uint8Array(bytes), {
+      headers: {
+        'Content-Type': asset.mime,
+        'Content-Length': String(bytes.length),
+        'Cache-Control': 'public, max-age=31536000, immutable',
+      },
+    })
+  }
+  try {
+    const res = await fromDb()
+    if (res) return res
   } catch (e) {
-    console.error('media db lookup failed', e)
+    // lookup threw (most likely: table does not exist yet) — create it and
+    // retry once, so images heal themselves without any manual step
+    console.error('media db lookup failed — self-healing MediaAsset table', e)
+    try {
+      await db.$executeRawUnsafe(CREATE_MEDIA_TABLE)
+      const res = await fromDb()
+      if (res) return res
+    } catch (e2) {
+      console.error('media db retry failed', e2)
+    }
   }
 
   // 2) legacy disk copy under public/uploads/<rel>

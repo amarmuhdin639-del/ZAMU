@@ -127,14 +127,15 @@ export function Header({ siteName, announcement, user, categories }: Props) {
               ))}
             </nav>
 
-            {/* logo — dead center */}
+            {/* logo — dead center, crown emblem + wordmark */}
             <Link
               href="/"
-              className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-baseline gap-1"
+              className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2"
               aria-label={`${siteName} home`}
             >
-              <span className="wordmark text-[26px] leading-none uppercase">{siteName}</span>
-              <span className="hidden sm:inline-block h-2 w-2 rounded-[2px] bg-flame" />
+              { }
+              <img src="/uploads/zamu-crown-logo.webp" alt="" className="h-9 w-9 object-contain" />
+              <span className="wordmark metallic-text text-[24px] leading-none uppercase">{siteName}</span>
             </Link>
 
             <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
@@ -155,7 +156,7 @@ export function Header({ siteName, announcement, user, categories }: Props) {
               >
                 <Heart className="h-[18px] w-[18px]" />
                 {mounted && wishCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-0.5 rounded-full bg-flame text-white text-[10px] font-bold flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-0.5 rounded-full bg-flame text-ink text-[10px] font-bold flex items-center justify-center">
                     {wishCount > 9 ? '9+' : wishCount}
                   </span>
                 )}
@@ -191,7 +192,7 @@ export function Header({ siteName, announcement, user, categories }: Props) {
               </button>
               <button
                 type="submit"
-                className="hidden sm:block rounded-full bg-ink px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-cream hover:bg-flame transition-colors"
+                className="hidden sm:block rounded-full bg-ink px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-cream hover:bg-flame hover:text-ink transition-colors"
               >
                 {t('common.search')}
               </button>
@@ -206,7 +207,11 @@ export function Header({ siteName, announcement, user, categories }: Props) {
           <div className="absolute inset-0 bg-black/50" onClick={() => setMenuOpen(false)} />
           <div className="absolute inset-y-0 left-0 flex w-[86%] max-w-sm flex-col bg-background shadow-xl">
             <div className="flex items-center justify-between border-b border-border px-5 py-4">
-              <span className="wordmark text-xl uppercase">{siteName}</span>
+              <span className="flex items-center gap-2">
+                { }
+                <img src="/uploads/zamu-crown-logo.webp" alt="" className="h-7 w-7 object-contain" />
+                <span className="wordmark text-xl uppercase">{siteName}</span>
+              </span>
               <div className="flex items-center gap-2">
                 <LangSwitch />
                 <button onClick={() => setMenuOpen(false)} aria-label="Close menu" className="p-1.5">
@@ -239,7 +244,7 @@ export function Header({ siteName, announcement, user, categories }: Props) {
                   <Link
                     key={c.slug}
                     href={`/shop/${c.slug}`}
-                    className="rounded-full border border-border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide hover:border-ink transition-colors"
+                    className="rounded-full border border-border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide hover:border-flame transition-colors"
                   >
                     {c.name}
                   </Link>
@@ -273,7 +278,7 @@ export function Header({ siteName, announcement, user, categories }: Props) {
                   </Link>
                   <Link
                     href="/account?tab=register"
-                    className="flex-1 rounded-full border border-ink py-3 text-center text-xs font-bold uppercase tracking-wider"
+                    className="flex-1 rounded-full border border-flame py-3 text-center text-xs font-bold uppercase tracking-wider"
                   >
                     {t('nav.createAccount')}
                   </Link>
@@ -297,7 +302,7 @@ function CartButton({ count }: { count: number }) {
     >
       <ShoppingBag className="h-[18px] w-[18px]" />
       {count > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-0.5 rounded-full bg-flame text-white text-[10px] font-bold flex items-center justify-center">
+        <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-0.5 rounded-full bg-flame text-ink text-[10px] font-bold flex items-center justify-center">
           {count > 9 ? '9+' : count}
         </span>
       )}
