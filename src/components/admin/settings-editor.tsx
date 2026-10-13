@@ -1,5 +1,6 @@
 'use client'
 
+import { compressForUpload } from '@/lib/upload-client'
 import { useEffect, useState, useCallback } from 'react'
 import { Loader2, Plus, Trash2, Save, UploadCloud, PowerOff, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -106,7 +107,7 @@ export function AdminSettings() {
     const isVideo = file.type.startsWith('video/')
     try {
       const fd = new FormData()
-      fd.append('file', file)
+      fd.append('file', await compressForUpload(file))
       fd.append('target', 'site')
       const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
       const data = await jsonOrThrow<{ url?: string; error?: string }>(res)
@@ -488,7 +489,7 @@ function CategoriesEditor() {
     setBusyId(id)
     try {
       const fd = new FormData()
-      fd.append('file', file)
+      fd.append('file', await compressForUpload(file))
       fd.append('target', 'categories')
       const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
       const data = await jsonOrThrow<{ url?: string; error?: string }>(res)

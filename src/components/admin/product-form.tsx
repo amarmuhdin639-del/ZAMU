@@ -1,5 +1,6 @@
 'use client'
 
+import { compressForUpload } from '@/lib/upload-client'
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { SafeImage } from '@/components/store/media-box'
@@ -112,7 +113,7 @@ export function ProductForm({
           throw new Error(t('admin.form.videoTooLarge'))
         }
         const fd = new FormData()
-        fd.append('file', file)
+        fd.append('file', await compressForUpload(file))
         const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
         const data = await jsonOrThrow<{ url?: string; error?: string }>(res)
         if (!res.ok) throw new Error(data.error ?? t('admin.form.uploadFailed'))
@@ -133,7 +134,7 @@ export function ProductForm({
     setUploadingColor(true)
     try {
       const fd = new FormData()
-      fd.append('file', file)
+      fd.append('file', await compressForUpload(file))
       const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
       const data = await jsonOrThrow<{ url?: string; error?: string }>(res)
       if (!res.ok) throw new Error(data.error ?? t('admin.form.uploadFailed'))

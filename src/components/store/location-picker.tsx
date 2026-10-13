@@ -3,6 +3,13 @@
 // Location picker for checkout — customer taps the map to pin their delivery
 // spot (or uses the phone's GPS). Leaflet + OpenStreetMap tiles: no API key,
 // no per-load cost. The pin travels with the order as "Pin: lat, lng".
+//
+// GPS accuracy: the phone's FIRST location fix is usually a coarse tower/
+// wifi guess (can be off by 1-2 km). Real GPS needs a few seconds to lock.
+// So "Use my location" now WATCHES the position, keeps refining the pin as
+// the fix gets better, draws a circle showing the current accuracy, and
+// stops as soon as the fix is within ~30 m (or after 16 s). maximumAge is 0
+// so a stale cached fix is never used.
 
 import { useEffect, useRef, useState } from 'react'
 import 'leaflet/dist/leaflet.css'
@@ -37,10 +44,13 @@ export default function LocationPicker({
 }) {
   const { t } = useLang()
   const divRef = useRef<HTMLDivElement | null>(null)
-   
+
   const mapRef = useRef<any>(null)
-   
+
   const markerRef = useRef<any>(null)
+  const circleRef = useRef<any>(null)
+  const watchRef = useRef<number | null>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [ready, setReady] = useState(false)
   const [locating, setLocating] = useState(false)
 
@@ -51,7 +61,7 @@ export default function LocationPicker({
       if (cancelled || !divRef.current || mapRef.current) return
       const map = L.map(divRef.current, { scrollWheelZoom: false, zoomControl: true }).setView(
         value ? [value.lat, value.lng] : ADDIS_CENTER,
-        value ? 16 : 11
+        value ? 17 : 12
       )
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
@@ -67,16 +77,18 @@ export default function LocationPicker({
     init()
     return () => {
       cancelled = true
+      stopWatching()
       if (mapRef.current) {
         mapRef.current.remove()
         mapRef.current = null
         markerRef.current = null
+        circleRef.current = null
       }
     }
-     
+
   }, [])
 
-   
+
   async function dropMarker(lat: number, lng: number) {
     const L = (await import('leaflet')).default
     if (markerRef.current) {
@@ -95,22 +107,59 @@ export default function LocationPicker({
     dropMarker(lat, lng)
   }
 
+  function stopWatching() {
+    if (watchRef.current !== null) {
+      navigator.geolocation.clearWatch(watchRef.current)
+      watchRef.current = null
+    }
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+  }
+
+  async function showAccuracy(lat: number, lng: number, accuracy: number) {
+    const L = (await import('leaflet')).default
+    if (!mapRef.current) return
+    if (circleRef.current) {
+      circleRef.current.setLatLng([lat, lng]).setRadius(accuracy)
+    } else {
+      circleRef.current = L.circle([lat, lng], {
+        radius: accuracy,
+        color: '#5fc690',
+        weight: 1,
+        fillColor: '#5fc690',
+        fillOpacity: 0.12,
+      }).addTo(mapRef.current)
+    }
+  }
+
   function useMyLocation() {
-    if (!navigator.geolocation) return
+    if (!navigator.geolocation || !ready) return
     setLocating(true)
-    navigator.geolocation.getCurrentPosition(
+    stopWatching()
+    let bestAcc = Infinity
+    const finish = () => {
+      stopWatching()
+      setLocating(false)
+      mapRef.current?.scrollWheelZoom.enable()
+    }
+    watchRef.current = navigator.geolocation.watchPosition(
       (pos) => {
-        setLocating(false)
-        const { latitude, longitude } = pos.coords
-        setPin(latitude, longitude)
-        mapRef.current?.setView([latitude, longitude], 16)
-        mapRef.current?.scrollWheelZoom.enable()
+        const { latitude, longitude, accuracy } = pos.coords
+        void showAccuracy(latitude, longitude, accuracy)
+        if (accuracy < bestAcc) {
+          bestAcc = accuracy
+          setPin(latitude, longitude)
+        }
+        mapRef.current?.setView([latitude, longitude], 18, { animate: true })
+        if (accuracy <= 30) finish()
       },
-      () => {
-        setLocating(false)
-      },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
+      () => finish(),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     )
+    // hard stop: never spin longer than 16 s
+    timerRef.current = setTimeout(finish, 16000)
   }
 
   return (
