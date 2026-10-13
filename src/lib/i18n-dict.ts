@@ -657,6 +657,7 @@ export const DICT: Record<string, { en: string; am: string }> = {
   'admin.audit.title': { en: 'Audit Log', am: 'የክንውን መዝገብ' },
   'admin.audit.sub': { en: 'Every sensitive admin action is recorded — payments, statuses, products, settings.', am: 'እያንዳንዱ ወሳኝ እርምጃ ይመዘገባል — ክፍያዎች፣ ሁኔታዎች፣ ምርቶች፣ ማስተካከያዎች።' },
   'admin.audit.empty': { en: 'No activity recorded yet.', am: 'እስካሁን እንቅስቃሴ አልተመዘገበም።' },
+  'admin.ord.coordsCopied': { en: 'Coordinates copied', am: 'ኮርዲኔቶች ተቀድተዋል' }
 }
 
 // Translate a key. Falls back to English, then to the raw key.

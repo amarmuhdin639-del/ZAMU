@@ -310,6 +310,7 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
               {order.whatsapp && <p className="text-muted-foreground">{t('admin.ord.whatsapp', { number: order.whatsapp })}</p>}
               <p className="pt-2 font-semibold">{t('admin.ord.address')}</p>
               <p className="text-muted-foreground">{order.city} — {order.address}</p>
+              <PinnedLocation address={order.address} />
               {order.notes && <p className="pt-1"><span className="font-semibold">{t('admin.ord.notes')}</span> <span className="text-muted-foreground">{order.notes}</span></p>}
             </div>
             <div className="mt-4 flex gap-2">
@@ -490,6 +491,56 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
           )}
         </DialogContent>
       </Dialog>
+    </div>
+  )
+}
+
+/** Extract "Pin: 9.012345, 38.760000" from a checkout address (map pin flow). */
+function parsePin(address: string): { lat: number; lng: number } | null {
+  const m = /Pin:\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/.exec(address || '')
+  if (!m) return null
+  const lat = parseFloat(m[1])
+  const lng = parseFloat(m[2])
+  if (Number.isNaN(lat) || Number.isNaN(lng)) return null
+  return { lat, lng }
+}
+
+/** Mini OpenStreetMap embed + open-in-maps links for the customer's pinned spot. */
+function PinnedLocation({ address }: { address: string }) {
+  const { t } = useLang()
+  const pin = parsePin(address)
+  if (!pin) return null
+  const { lat, lng } = pin
+  const d = 0.004
+  const bbox = `${lng - d}%2C${lat - d}%2C${lng + d}%2C${lat + d}`
+  return (
+    <div className="mt-3">
+      <iframe
+        title="Customer delivery pin"
+        src={`https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lng}`}
+        className="h-44 w-full rounded-xl border border-border"
+        loading="lazy"
+      />
+      <div className="mt-2 flex gap-2">
+        <a
+          href={`https://www.google.com/maps?q=${lat},${lng}`}
+          target="_blank"
+          rel="noreferrer"
+          className="flex-1 rounded-full border border-border py-2 text-center text-[11px] font-bold uppercase tracking-wider hover:border-flame"
+        >
+          {t('admin.ord.openMap')}
+        </a>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard?.writeText(`${lat}, ${lng}`)
+            toast.success(t('admin.ord.coordsCopied'))
+          }}
+          className="flex-1 rounded-full border border-border py-2 text-center text-[11px] font-bold uppercase tracking-wider hover:border-flame"
+        >
+          {t('admin.ord.copyCoords')}
+        </button>
+      </div>
     </div>
   )
 }
