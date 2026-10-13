@@ -505,19 +505,17 @@ function parsePin(address: string): { lat: number; lng: number } | null {
   return { lat, lng }
 }
 
-/** Mini OpenStreetMap embed + open-in-maps links for the customer's pinned spot. */
+/** Google Maps embed of the customer's pinned spot + open-in-maps links. */
 function PinnedLocation({ address }: { address: string }) {
   const { t } = useLang()
   const pin = parsePin(address)
   if (!pin) return null
   const { lat, lng } = pin
-  const d = 0.004
-  const bbox = `${lng - d}%2C${lat - d}%2C${lng + d}%2C${lat + d}`
   return (
     <div className="mt-3">
       <iframe
         title="Customer delivery pin"
-        src={`https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lng}`}
+        src={`https://maps.google.com/maps?q=${lat}%2C${lng}&z=17&output=embed&hl=en`}
         className="h-44 w-full rounded-xl border border-border"
         loading="lazy"
       />

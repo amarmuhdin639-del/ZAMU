@@ -292,6 +292,7 @@ function TrackResult({ order }: { order: TrackedOrder }) {
           <div className="flex justify-between border-t border-border pt-2 font-bold"><dt>{t('payment.total')}</dt><dd>{formatPrice(order.total)}</dd></div>
         </dl>
         <p className="mt-3 text-xs text-muted-foreground">Delivering to: {order.city} — {order.address}</p>
+        {order.address && <TrackPinMap address={order.address} />}
       </div>
 
       {/* store updates the admin sent for this order */}
@@ -342,5 +343,36 @@ export function TrackPageClient() {
     <Suspense fallback={<div className="flex justify-center py-24"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
       <TrackClient />
     </Suspense>
+  )
+}
+
+/** Google Maps mini-embed for the order's delivery pin ("Pin: lat, lng"). */
+function TrackPinMap({ address }: { address: string }) {
+  const { t } = useLang()
+  const m = /Pin:\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/.exec(address || '')
+  if (!m) return null
+  const lat = parseFloat(m[1])
+  const lng = parseFloat(m[2])
+  if (Number.isNaN(lat) || Number.isNaN(lng)) return null
+  return (
+    <div className="mt-4 rounded-xl border border-border bg-card p-3">
+      <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('track.mapTitle')}</p>
+      <iframe
+        title={t('track.mapTitle')}
+        src={`https://maps.google.com/maps?q=${lat}%2C${lng}&z=16&output=embed&hl=en`}
+        className="mt-2 h-48 w-full rounded-lg border border-border"
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+        allowFullScreen
+      />
+      <a
+        href={`https://www.google.com/maps?q=${lat},${lng}`}
+        target="_blank"
+        rel="noreferrer"
+        className="mt-2 inline-block rounded-full border border-border px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider hover:border-flame"
+      >
+        {t('admin.ord.openMap')}
+      </a>
+    </div>
   )
 }

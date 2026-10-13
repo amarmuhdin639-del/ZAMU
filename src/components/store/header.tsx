@@ -9,6 +9,7 @@ import { useCart, useWishlist } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { useMounted } from '@/hooks/use-mounted'
+import { CrownLogo } from '@/components/store/logo'
 import type { SafeUser } from '@/lib/auth'
 
 const NAV = [
@@ -134,7 +135,7 @@ export function Header({ siteName, announcement, user, categories }: Props) {
               aria-label={`${siteName} home`}
             >
               { }
-              <img src="/uploads/zamu-crown-logo.webp" alt="" className="h-9 w-9 object-contain" />
+              <CrownLogo className="h-9 w-9" />
               <span className="wordmark metallic-text text-[24px] leading-none uppercase">{siteName}</span>
             </Link>
 
@@ -209,7 +210,7 @@ export function Header({ siteName, announcement, user, categories }: Props) {
             <div className="flex items-center justify-between border-b border-border px-5 py-4">
               <span className="flex items-center gap-2">
                 { }
-                <img src="/uploads/zamu-crown-logo.webp" alt="" className="h-7 w-7 object-contain" />
+                <CrownLogo className="h-7 w-7" />
                 <span className="wordmark text-xl uppercase">{siteName}</span>
               </span>
               <div className="flex items-center gap-2">

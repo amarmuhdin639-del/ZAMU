@@ -6,6 +6,7 @@ import { T, LangSwitch } from '@/lib/i18n'
 import { PWAInstallButton } from '@/components/store/pwa'
 import { SocialRow } from '@/components/store/social-icons'
 import { parseSocialLinks } from '@/lib/social'
+import { CrownLogo } from '@/components/store/logo'
 
 const PAY_METHODS = ['Telebirr', 'CBE Birr', 'Bank Transfer']
 
@@ -22,7 +23,7 @@ export function Footer({ settings }: { settings: SettingsMap }) {
         <div className="grid grid-cols-2 gap-10 md:grid-cols-5">
           <div className="col-span-2 md:col-span-2">
             { }
-            <img src="/uploads/zamu-crown-logo.webp" alt={`${site} crown emblem`} className="h-16 w-16 object-contain" />
+            <CrownLogo className="h-16 w-16" />
             <p className="wordmark mt-3 text-3xl uppercase tracking-tight text-cream">
               {site}
             </p>

@@ -1,6 +1,6 @@
 'use client'
 
-import { compressForUpload } from '@/lib/upload-client'
+import { uploadMedia } from '@/lib/upload-client'
 import { useEffect, useState, useCallback } from 'react'
 import { Loader2, Plus, Trash2, Save, UploadCloud, PowerOff, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -106,12 +106,7 @@ export function AdminSettings() {
     setHeroImageUploading(true)
     const isVideo = file.type.startsWith('video/')
     try {
-      const fd = new FormData()
-      fd.append('file', await compressForUpload(file))
-      fd.append('target', 'site')
-      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
-      const data = await jsonOrThrow<{ url?: string; error?: string }>(res)
-      if (!res.ok) throw new Error(data.error ?? t('admin.form.uploadFailed'))
+      const data = await uploadMedia(file, 'site')
       setSettings((s) => ({ ...s, [isVideo ? 'heroVideo' : 'heroImage']: data.url ?? '' }))
       toast.success(t(isVideo ? 'admin.settings.heroVideoUploaded' : 'admin.settings.heroUploaded'))
     } catch (e) {
@@ -488,12 +483,7 @@ function CategoriesEditor() {
     if (!file) return
     setBusyId(id)
     try {
-      const fd = new FormData()
-      fd.append('file', await compressForUpload(file))
-      fd.append('target', 'categories')
-      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
-      const data = await jsonOrThrow<{ url?: string; error?: string }>(res)
-      if (!res.ok) throw new Error(data.error ?? t('admin.form.uploadFailed'))
+      const data = await uploadMedia(file, 'categories')
       const patch = await fetch(`/api/admin/categories/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

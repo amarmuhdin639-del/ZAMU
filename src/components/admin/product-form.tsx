@@ -1,6 +1,6 @@
 'use client'
 
-import { compressForUpload } from '@/lib/upload-client'
+import { uploadMedia } from '@/lib/upload-client'
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { SafeImage } from '@/components/store/media-box'
@@ -112,11 +112,7 @@ export function ProductForm({
         if (file.type.startsWith('video/') && file.size > 80 * 1024 * 1024) {
           throw new Error(t('admin.form.videoTooLarge'))
         }
-        const fd = new FormData()
-        fd.append('file', await compressForUpload(file))
-        const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
-        const data = await jsonOrThrow<{ url?: string; error?: string }>(res)
-        if (!res.ok) throw new Error(data.error ?? t('admin.form.uploadFailed'))
+        const data = await uploadMedia(file, 'products')
         setImages((imgs) => [...imgs, { url: data.url ?? '', alt: form.name }].slice(0, 8))
       }
       toast.success(t('admin.form.imagesUploaded'))
@@ -133,11 +129,7 @@ export function ProductForm({
     if (!file || idx === null) return
     setUploadingColor(true)
     try {
-      const fd = new FormData()
-      fd.append('file', await compressForUpload(file))
-      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
-      const data = await jsonOrThrow<{ url?: string; error?: string }>(res)
-      if (!res.ok) throw new Error(data.error ?? t('admin.form.uploadFailed'))
+      const data = await uploadMedia(file, 'products')
       const url = data.url ?? ''
       setColors((cur) => cur.map((x, j) => (j === idx ? { ...x, image: url } : x)))
       setImages((imgs) => (imgs.some((x) => x.url === url) ? imgs : [...imgs, { url, alt: form.name }].slice(0, 8)))
