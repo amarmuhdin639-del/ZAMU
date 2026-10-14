@@ -15,21 +15,47 @@
 // - and short links (maps.app.goo.gl/...) are resolved server-side by
 // /api/geo/resolve because browsers cannot follow them cross-origin.
 //
-// "Use my location" still works: it watches the GPS fix, keeps only the
-// best-accuracy reading, and reports how exact the lock is (±metres) so the
-// customer knows when to trust it.
+// Why the "walk the pin" pad: an embedded Google map cannot report where the
+// customer panned it (cross-origin), so panning alone can not set the pin.
+// Instead the arrows physically MOVE the pin - with a step size the customer
+// picks (100 m / 500 m / 1 km). A 5 km GPS error becomes ~5 taps at the 1 km
+// step, then a couple at 100 m. The map also auto-zooms OUT when the GPS fix
+// is coarse, so the customer can SEE the pin is wrong before correcting it.
 
 import { useEffect, useRef, useState } from 'react'
 import { useLang } from '@/lib/i18n'
-import { Crosshair, MapPin, Loader2, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react'
+import { Crosshair, MapPin, Loader2, Footprints, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react'
 
 export type PinValue = { lat: number; lng: number } | null
 
 const ADDIS = { lat: 9.0192, lng: 38.7525 }
-const NU = 0.00018 // ~20 m at Addis Ababa's latitude
+
+// Nudge steps in degrees of latitude (~metres at Addis Ababa's latitude).
+// Longitude uses the same figure - Addis sits at 9 deg N where the cos
+// factor (0.988) is irrelevant at walking scale.
+const STEPS = [
+  { key: 'checkout.step100', deg: 0.0009 },
+  { key: 'checkout.step500', deg: 0.0045 },
+  { key: 'checkout.step1k', deg: 0.009 },
+] as const
 
 function embedUrl(lat: number, lng: number, zoom: number) {
   return `https://maps.google.com/maps?q=${lat.toFixed(6)},${lng.toFixed(6)}&z=${zoom}&output=embed&hl=en`
+}
+
+// Map zoom that makes the CURRENT error visible: an exact fix gets street
+// level, a 5 km network guess gets a city view where the mistake is obvious.
+function zoomFor(accuracy: number) {
+  if (accuracy <= 100) return 17
+  if (accuracy <= 500) return 15
+  if (accuracy <= 2000) return 13
+  return 11
+}
+
+function stepFor(accuracy: number) {
+  if (accuracy > 700) return 2 // 1 km
+  if (accuracy > 250) return 1 // 500 m
+  return 0 // 100 m
 }
 
 // Reads coordinates out of anything Google Maps hands you: full URLs with
@@ -74,9 +100,12 @@ export default function LocationPicker({
   const [accuracy, setAccuracy] = useState<number | null>(null)
   const [paste, setPaste] = useState('')
   const [pasteErr, setPasteErr] = useState(false)
+  const [stepIdx, setStepIdx] = useState(0)
 
   // The iframe is a heavy Google page: reload it at most once per 900 ms of
   // quiet, and only when the pin actually moved more than a couple of metres.
+  // zoomRef carries the chosen zoom so a coarse GPS fix can open zoomed out.
+  const zoomRef = useRef(12)
   const frameRef = useRef<{ lat: number; lng: number }>({ lat: value?.lat ?? ADDIS.lat, lng: value?.lng ?? ADDIS.lng })
   const [frameSrc, setFrameSrc] = useState(() =>
     value ? embedUrl(value.lat, value.lng, 17) : embedUrl(ADDIS.lat, ADDIS.lng, 12)
@@ -89,7 +118,7 @@ export default function LocationPicker({
     if (moved < 0.00002) return
     const timer = setTimeout(() => {
       frameRef.current = { lat: value.lat, lng: value.lng }
-      setFrameSrc(embedUrl(value.lat, value.lng, 17))
+      setFrameSrc(embedUrl(value.lat, value.lng, zoomRef.current))
     }, 900)
     return () => clearTimeout(timer)
   }, [value?.lat, value?.lng])
@@ -124,6 +153,10 @@ export default function LocationPicker({
         if (acc < bestAcc) {
           bestAcc = acc
           setAccuracy(acc)
+          // zoom out for a coarse fix so the error is visible, and pre-pick
+          // a matching step size so the customer can start correcting fast
+          zoomRef.current = zoomFor(acc)
+          setStepIdx(stepFor(acc))
           onChange({ lat: latitude, lng: longitude })
         }
         if (acc <= 30) finish()
@@ -141,6 +174,7 @@ export default function LocationPicker({
       setAccuracy(null)
       setPasteErr(false)
       setPaste('')
+      zoomRef.current = 17 // pasted coordinates are exact - street level
       onChange(local)
       return
     }
@@ -158,6 +192,7 @@ export default function LocationPicker({
           setAccuracy(null)
           setPasteErr(false)
           setPaste('')
+          zoomRef.current = 17
           onChange({ lat: d.lat, lng: d.lng })
           return
         }
@@ -170,11 +205,16 @@ export default function LocationPicker({
 
   function nudge(dLat: number, dLng: number) {
     if (!value) return
-    onChange({ lat: value.lat + dLat, lng: value.lng + dLng })
+    const s = STEPS[stepIdx].deg
+    onChange({ lat: value.lat + dLat * s, lng: value.lng + dLng * s })
   }
 
   const nudgeBtn =
-    'flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-foreground transition-colors hover:border-flame'
+    'flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card text-foreground transition-colors hover:border-flame active:bg-secondary'
+
+  const stepChip = (selected: boolean) =>
+    'rounded-md px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide transition-colors ' +
+    (selected ? 'bg-ink text-cream' : 'border border-border bg-card text-foreground hover:border-flame')
 
   return (
     <div>
@@ -218,29 +258,44 @@ export default function LocationPicker({
               </span>
             )}
           </p>
-          <div className="mt-2 flex flex-wrap items-center gap-3">
-            <div className="grid w-max grid-cols-3 gap-1">
-              <span />
-              <button type="button" aria-label="nudge north" onClick={() => nudge(NU, 0)} className={nudgeBtn}>
-                <ArrowUp className="h-3.5 w-3.5" />
-              </button>
-              <span />
-              <button type="button" aria-label="nudge west" onClick={() => nudge(0, -NU)} className={nudgeBtn}>
-                <ArrowLeft className="h-3.5 w-3.5" />
-              </button>
-              <span className="flex h-7 w-7 items-center justify-center">
-                <MapPin className="h-3 w-3 text-muted-foreground" />
-              </span>
-              <button type="button" aria-label="nudge east" onClick={() => nudge(0, NU)} className={nudgeBtn}>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </button>
-              <span />
-              <button type="button" aria-label="nudge south" onClick={() => nudge(-NU, 0)} className={nudgeBtn}>
-                <ArrowDown className="h-3.5 w-3.5" />
-              </button>
-              <span />
+
+          <div className="mt-2 rounded-xl border border-border bg-card p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                <Footprints className="h-3.5 w-3.5 text-flame" /> {t('checkout.stepTitle')}
+              </p>
+              <div className="flex gap-1">
+                {STEPS.map((s, i) => (
+                  <button key={s.key} type="button" onClick={() => setStepIdx(i)} className={stepChip(stepIdx === i)}>
+                    {t(s.key)}
+                  </button>
+                ))}
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">{t('checkout.nudgeHint')}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <div className="grid w-max grid-cols-3 gap-1">
+                <span />
+                <button type="button" aria-label="move pin north" onClick={() => nudge(1, 0)} className={nudgeBtn}>
+                  <ArrowUp className="h-4 w-4" />
+                </button>
+                <span />
+                <button type="button" aria-label="move pin west" onClick={() => nudge(0, -1)} className={nudgeBtn}>
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+                <span className="flex h-9 w-9 items-center justify-center text-[10px] font-bold uppercase text-muted-foreground">
+                  {t(STEPS[stepIdx].key)}
+                </span>
+                <button type="button" aria-label="move pin east" onClick={() => nudge(0, 1)} className={nudgeBtn}>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+                <span />
+                <button type="button" aria-label="move pin south" onClick={() => nudge(-1, 0)} className={nudgeBtn}>
+                  <ArrowDown className="h-4 w-4" />
+                </button>
+                <span />
+              </div>
+              <p className="text-xs text-muted-foreground">{t('checkout.nudgeHint')}</p>
+            </div>
           </div>
         </>
       ) : (
@@ -280,3 +335,4 @@ export default function LocationPicker({
     </div>
   )
 }
+

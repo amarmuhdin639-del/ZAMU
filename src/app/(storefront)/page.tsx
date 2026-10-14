@@ -75,12 +75,22 @@ export default async function HomePage() {
                   aria-label="ZAMU drop video"
                   className="absolute inset-0 h-full w-full object-cover"
                 />
+              ) : map.heroImage ? (
+                /* admin-uploaded hero photo */
+                <img
+                  src={map.heroImage}
+                  alt="ZAMU editorial"
+                  className="absolute inset-0 h-full w-full object-cover object-[center_25%]"
+                />
               ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-cream p-8 text-center" aria-hidden>
-                  <p className="wordmark text-[42vw] leading-none text-ink sm:text-[170px] lg:text-[190px]">Z</p>
-                  <p className="mt-3 font-display text-[11px] uppercase tracking-[0.34em] text-ink/80 sm:text-xs">Addis Ababa · Family Run</p>
-                  <p className="mt-1.5 font-display text-[11px] uppercase tracking-[0.34em] text-ink/50 sm:text-xs">Limited Runs · No Restocks</p>
-                </div>
+                /* built-in editorial photo — the file ships inside the repo,
+                   so the homepage always opens on a real image, zero setup */
+                <img
+                  src="/brand/hero-zamu.jpg"
+                  alt="ZAMU streetwear editorial"
+                  className="absolute inset-0 h-full w-full object-cover object-[center_25%]"
+                  fetchPriority="high"
+                />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-transparent lg:hidden" />
             </div>

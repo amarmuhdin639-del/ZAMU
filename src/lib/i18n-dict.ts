@@ -123,13 +123,13 @@ export const DICT: Record<string, { en: string; am: string }> = {
   'checkout.city': { en: 'City', am: 'ከተማ' },
   'checkout.address': { en: 'Delivery address', am: 'የማድረስ አድራሻ' },
   'checkout.pinTitle': { en: 'Pin your location on the map', am: 'አድራሻዎን በካርታው ላይ ይምረጡ' },
-  'checkout.pinHint': { en: 'Tap the map where the rider should deliver — or use your current location. No need to type your address.', am: 'መኪናው እንዲያቆምበት የሚፈልጉበትን ቦታ በካርታው ላይ ይንኩ — ወይም የአሁኑን ቦታዎን ይጠቀሙ። አድራሻ መጻፍ አያስፈልግም።' },
+  'checkout.pinHint': { en: 'Use my location, or paste your exact spot from the Google Maps app below — then walk the pin to your door with the arrows.', am: 'የአሁኑን ቦታዎን ይጠቀሙ ወይም ከታች ካለው Google Maps መተግበሪያ ትክክለኛ ቦታዎን ይለጥፉ — ከዚያ በቀስቶቹ እርዳታ ፒኑን ወደ ቤትዎ ያንቀሳቅሱት።' },
   'checkout.useMyLocation': { en: 'Use my location', am: 'የአሁኑን ቦታዎን ይጠቀሙ' },
   'checkout.locating': { en: 'Finding you…', am: 'በመፈለግ ላይ…' },
   'checkout.pinSet': { en: 'Location pinned', am: 'ቦታው ተምርጫል' },
   'checkout.pinRequired': { en: 'Please pin your delivery location on the map', am: 'እባክዎ የማድረስ ቦታዎን በካርታው ላይ ይምረጡ' },
   'track.mapTitle': { en: 'Delivery map', am: 'የማድረስ ካርታ' },
-  'checkout.nudgeHint': { en: 'Arrows nudge the pin by about 20 m', am: 'ቀስቶቹ ፒኑን በግምት 20 ሜትር ያንቀሳቅሳሉ' },
+  'checkout.nudgeHint': { en: 'Tap the arrows until the pin sits on your door — the middle shows the step size.', am: 'ፒኑ በቤትዎ በር ላይ እስኪደርስ ቀስቶቹን ይንኩ — መሃል ላይ የዝውውሩ ርቀት ይታያል።' },
   'checkout.accPoor': { en: 'rough — for an exact pin, paste your spot from the Google Maps app below', am: 'ርቆም ነው — ትክክለኛ ቦታ ለማስቀመጥ ከታች ከGoogle Maps መተግበሪያው ቦታዎን ይለጥፉ' },
   'checkout.accGood': { en: 'accurate', am: 'ትክክል ነው' },
   'checkout.accLabel': { en: 'GPS accuracy', am: 'የGPS ትክክለኛነት' },
@@ -666,7 +666,11 @@ export const DICT: Record<string, { en: string; am: string }> = {
   'admin.audit.title': { en: 'Audit Log', am: 'የክንውን መዝገብ' },
   'admin.audit.sub': { en: 'Every sensitive admin action is recorded — payments, statuses, products, settings.', am: 'እያንዳንዱ ወሳኝ እርምጃ ይመዘገባል — ክፍያዎች፣ ሁኔታዎች፣ ምርቶች፣ ማስተካከያዎች።' },
   'admin.audit.empty': { en: 'No activity recorded yet.', am: 'እስካሁን እንቅስቃሴ አልተመዘገበም።' },
-  'admin.ord.coordsCopied': { en: 'Coordinates copied', am: 'ኮርዲኔቶች ተቀድተዋል' }
+  'admin.ord.coordsCopied': { en: 'Coordinates copied', am: 'ኮርዲኔቶች ተቀድተዋል' },
+  'checkout.stepTitle': { en: 'Walk the pin', am: 'ፒኑን ያንቀሳቅሱት' },
+  'checkout.step100': { en: '100 m', am: '100 ሜ' },
+  'checkout.step500': { en: '500 m', am: '500 ሜ' },
+  'checkout.step1k': { en: '1 km', am: '1 ኪ.ሜ' },
 }
 
 // Translate a key. Falls back to English, then to the raw key.
