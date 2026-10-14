@@ -350,10 +350,26 @@ export function TrackPageClient() {
 function TrackPinMap({ address }: { address: string }) {
   const { t } = useLang()
   const m = /Pin:\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/.exec(address || '')
-  if (!m) return null
-  const lat = parseFloat(m[1])
-  const lng = parseFloat(m[2])
-  if (Number.isNaN(lat) || Number.isNaN(lng)) return null
+  const lat = m ? parseFloat(m[1]) : NaN
+  const lng = m ? parseFloat(m[2]) : NaN
+  const hasPin = Number.isFinite(lat) && Number.isFinite(lng)
+  const [area, setArea] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!hasPin) return
+    let dead = false
+    fetch(`/api/geo/area?lat=${lat}&lng=${lng}`)
+      .then((r) => r.json())
+      .then((d: { area?: string | null }) => {
+        if (!dead && d && typeof d.area === 'string' && d.area) setArea(d.area)
+      })
+      .catch(() => {})
+    return () => {
+      dead = true
+    }
+  }, [hasPin, lat, lng])
+
+  if (!hasPin) return null
   return (
     <div className="mt-4 rounded-xl border border-border bg-card p-3">
       <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('track.mapTitle')}</p>
@@ -365,6 +381,11 @@ function TrackPinMap({ address }: { address: string }) {
         referrerPolicy="no-referrer-when-downgrade"
         allowFullScreen
       />
+      {area && (
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          {t('track.pinArea')}: ≈ {area}
+        </p>
+      )}
       <a
         href={`https://www.google.com/maps?q=${lat},${lng}`}
         target="_blank"

@@ -36,6 +36,8 @@ const SETTING_FIELDS: { key: string; labelKey: string; hintKey?: string; long?: 
   { key: 'contactWhatsapp', labelKey: 'admin.settings.fields.contactWhatsapp' },
   { key: 'contactInstagram', labelKey: 'admin.settings.fields.contactInstagram' },
   { key: 'contactTiktok', labelKey: 'admin.settings.fields.contactTiktok' },
+  { key: 'storeLat', labelKey: 'admin.settings.fields.storeLat', hintKey: 'admin.settings.fields.storeLatHint' },
+  { key: 'storeLng', labelKey: 'admin.settings.fields.storeLng', hintKey: 'admin.settings.fields.storeLngHint' },
   { key: 'aboutTitle', labelKey: 'admin.settings.fields.aboutTitle' },
   { key: 'aboutText', labelKey: 'admin.settings.fields.aboutText', long: true },
   { key: 'deliveryInfo', labelKey: 'admin.settings.fields.deliveryInfo', long: true },

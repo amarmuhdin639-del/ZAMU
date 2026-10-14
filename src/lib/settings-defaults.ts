@@ -32,4 +32,8 @@ export const SETTING_DEFAULTS: Record<string, string> = {
   flashSaleEndsAt: '', // ISO date string; empty = no active flash sale
   flashSaleText: 'FLASH SALE — UP TO 30% OFF SELECTED JERSEYS',
   estimatedDeliveryNote: 'Delivered in 1–2 days after payment verification (Addis Ababa)',
+  // The shop's own pin: the checkout map opens here, area searches bias
+  // here and "km from shop" is measured from here. Set in Admin > Settings.
+  storeLat: '9.0192',
+  storeLng: '38.7525',
 }

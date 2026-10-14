@@ -30,9 +30,11 @@ type Props = {
   zones: DeliveryZone[]
   user: SafeUser | null
   deliveryNote: string
+  storeLat: string
+  storeLng: string
 }
 
-export function CheckoutForm({ zones, user, deliveryNote }: Props) {
+export function CheckoutForm({ zones, user, deliveryNote, storeLat, storeLng }: Props) {
   const router = useRouter()
   const { t } = useLang()
   const cart = useCart()
@@ -155,7 +157,7 @@ export function CheckoutForm({ zones, user, deliveryNote }: Props) {
               <Input id="city" required value={form.city} onChange={(e) => set('city', e.target.value)} placeholder="Addis Ababa" className="mt-1.5" />
             </div>
             <div className="sm:col-span-2">
-              <LocationPicker value={pin} onChange={setPin} />
+              <LocationPicker value={pin} onChange={setPin} storeLat={storeLat} storeLng={storeLng} />
             </div>
             <div className="sm:col-span-2">
               <Label htmlFor="address">{t('checkout.addressNote')}</Label>

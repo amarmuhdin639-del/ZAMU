@@ -42,7 +42,7 @@ export default async function CheckoutPage() {
         <span className="text-muted-foreground">Done</span>
       </div>
       <h1 className="font-display text-4xl uppercase tracking-tight">Checkout</h1>
-      <CheckoutForm zones={zones} user={user} deliveryNote={map.estimatedDeliveryNote} />
+      <CheckoutForm zones={zones} user={user} deliveryNote={map.estimatedDeliveryNote} storeLat={map.storeLat} storeLng={map.storeLng} />
     </div>
   )
 }

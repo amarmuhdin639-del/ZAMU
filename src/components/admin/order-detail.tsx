@@ -505,12 +505,64 @@ function parsePin(address: string): { lat: number; lng: number } | null {
   return { lat, lng }
 }
 
-/** Google Maps embed of the customer's pinned spot + open-in-maps links. */
+/** The shop's own coordinates (Admin > Settings), fetched once per page. */
+let storeSpotPromise: Promise<{ lat: number; lng: number } | null> | null = null
+function storeSpot() {
+  if (!storeSpotPromise) {
+    storeSpotPromise = fetch('/api/admin/settings')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { settings?: Record<string, string> } | null) => {
+        const s = d?.settings ?? {}
+        const lat = parseFloat(s.storeLat ?? '')
+        const lng = parseFloat(s.storeLng ?? '')
+        return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null
+      })
+      .catch(() => null)
+  }
+  return storeSpotPromise
+}
+
+function pinDistanceKm(aLat: number, aLng: number, bLat: number, bLng: number) {
+  const dLat = ((bLat - aLat) * Math.PI) / 180
+  const dLng = ((bLng - aLng) * Math.PI) / 180
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((aLat * Math.PI) / 180) * Math.cos((bLat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2
+  return 2 * 6371 * Math.asin(Math.sqrt(s))
+}
+
+function fmtKm(km: number) {
+  return km < 10 ? km.toFixed(1) : String(Math.round(km))
+}
+
+/** Google Maps embed of the customer's pinned spot + neighbourhood + km from shop. */
 function PinnedLocation({ address }: { address: string }) {
   const { t } = useLang()
   const pin = parsePin(address)
+  const [area, setArea] = useState<string | null>(null)
+  const [shop, setShop] = useState<{ lat: number; lng: number } | null>(null)
+
+  useEffect(() => {
+    if (!pin) return
+    let dead = false
+    fetch(`/api/geo/area?lat=${pin.lat}&lng=${pin.lng}`)
+      .then((r) => r.json())
+      .then((d: { area?: string | null }) => {
+        if (!dead && d && typeof d.area === 'string' && d.area) setArea(d.area)
+      })
+      .catch(() => {})
+    void storeSpot().then((s) => {
+      if (!dead) setShop(s)
+    })
+    return () => {
+      dead = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pin?.lat, pin?.lng])
+
   if (!pin) return null
   const { lat, lng } = pin
+  const km = shop ? pinDistanceKm(lat, lng, shop.lat, shop.lng) : null
   return (
     <div className="mt-3">
       <iframe
@@ -519,6 +571,20 @@ function PinnedLocation({ address }: { address: string }) {
         className="h-44 w-full rounded-xl border border-border"
         loading="lazy"
       />
+      {(area || km !== null) && (
+        <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+          {area && (
+            <span className="font-semibold">
+              {t('admin.ord.pinArea')}: ≈ {area}
+            </span>
+          )}
+          {km !== null && (
+            <span className={km > 25 ? 'font-bold text-[#e2a13f]' : ''}>
+              · {t('admin.ord.fromShop', { km: fmtKm(km) })}
+            </span>
+          )}
+        </p>
+      )}
       <div className="mt-2 flex gap-2">
         <a
           href={`https://www.google.com/maps?q=${lat},${lng}`}
