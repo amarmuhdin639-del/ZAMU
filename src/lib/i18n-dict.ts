@@ -18,6 +18,11 @@ export const DICT: Record<string, { en: string; am: string }> = {
   'common.free': { en: 'Free', am: 'በነጻ' },
   'common.categories': { en: 'Categories', am: 'ምድቦች' },
   'common.language': { en: 'Language', am: 'ቋንቋ' },
+  'error.tag': { en: 'We hit a snag', am: 'ችግር ተከስቷል' },
+  'error.title': { en: 'This page took a hit', am: 'ይህ ገጽ ችግር አጋጥሞታል' },
+  'error.text': { en: 'The page failed to load — your bag and orders are safe. Try again.', am: 'ገጹ መጫን አልተቻለም — ቅርጫትዎና ትዕዛዞችዎ ደህና ናቸው። እንደገና ይሞክሩ።' },
+  'error.retry': { en: 'Try again', am: 'እንደገና ይሞክሩ' },
+  'error.home': { en: 'Back to home', am: 'ወደ መነሻ ተመለስ' },
 
   // ---------- header / nav ----------
   'nav.home': { en: 'Home', am: 'መነሻ' },
@@ -649,6 +654,7 @@ export const DICT: Record<string, { en: string; am: string }> = {
 
   // ---------- admin — discounts editor ----------
   'admin.dc.title': { en: 'Discount codes', am: 'የቅናሽ ኮዶች' },
+  'admin.dc.createBtn': { en: 'Create code', am: 'ኮድ መፍጠር' },
   'admin.dc.empty': { en: 'No codes yet.', am: 'ገና ኮዶች የሉም።' },
   'admin.dc.minUsed': { en: 'min order {min} · used {used}{limit} · ends {ends}', am: 'ዝቅተኛ ትዕዛዝ {min} · {used}{limit} ጊዜ ጠቅሟል · የሚያበቃ {ends}' },
   'admin.dc.createTitle': { en: 'Create code', am: 'ኮድ ፍጠር' },

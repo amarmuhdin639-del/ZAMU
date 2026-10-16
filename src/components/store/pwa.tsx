@@ -73,7 +73,7 @@ export function PWARegister({ siteName }: { siteName: string }) {
         listeners.delete(listener)
       }
     }
-    return () => listeners.delete(listener)
+    return () => { listeners.delete(listener) }
   }, [])
 
   async function install() {
@@ -149,7 +149,7 @@ export function PWAInstallButton() {
     } catch {}
     if (installed) return
     if (!('serviceWorker' in navigator)) return
-    return () => listeners.delete(listener)
+    return () => { listeners.delete(listener) }
   }, [])
 
   if (!installable) return null

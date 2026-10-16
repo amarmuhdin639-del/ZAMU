@@ -71,7 +71,7 @@ export function MediaBox({
         playsInline
         autoPlay={autoPlay}
         preload={autoPlay ? 'auto' : 'metadata'}
-        onError={() => setFailedSrc(src)}
+        onError={() => setFailedSrc(typeof src === 'string' ? src : null)}
         className={cn('absolute inset-0 h-full w-full', className)}
         onMouseEnter={hoverPlay ? (e) => { e.currentTarget.play().catch(() => {}) } : undefined}
         onMouseLeave={hoverPlay ? (e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0 } : undefined}
@@ -85,7 +85,7 @@ export function MediaBox({
       fill
       sizes={sizes}
       priority={priority}
-      onError={() => setFailedSrc(src)}
+      onError={() => setFailedSrc(typeof src === 'string' ? src : null)}
       className={className}
     />
   )
@@ -103,6 +103,6 @@ export function SafeImage({ src, ...props }: ImageProps) {
   if (failed || !src) return <MediaFallback className="rounded-md" />
   return (
     // eslint-disable-next-line jsx-a11y/alt-text -- alt arrives via props
-    <Image src={src} {...props} onError={() => setFailedSrc(src)} />
+    <Image src={src} {...props} onError={() => setFailedSrc(typeof src === 'string' ? src : null)} />
   )
 }

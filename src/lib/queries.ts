@@ -54,9 +54,10 @@ function buildWhere(f: ProductListFilters): Prisma.ProductWhereInput {
   if (f.category) where.category = { slug: f.category }
   if (f.slugs) where.slug = { in: f.slugs }
   if (f.minPrice !== undefined || f.maxPrice !== undefined) {
-    where.AND = where.AND || []
-    if (f.minPrice !== undefined) where.AND.push({ price: { gte: f.minPrice } })
-    if (f.maxPrice !== undefined) where.AND.push({ price: { lte: f.maxPrice } })
+    const and: Prisma.ProductWhereInput[] = []
+    if (f.minPrice !== undefined) and.push({ price: { gte: f.minPrice } })
+    if (f.maxPrice !== undefined) and.push({ price: { lte: f.maxPrice } })
+    where.AND = and
   }
   if (f.size) where.sizes = { contains: f.size }
   if (f.color) where.colors = { contains: f.color }

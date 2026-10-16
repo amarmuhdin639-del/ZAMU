@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Anton, Archivo } from 'next/font/google'
 import { Toaster } from 'sonner'
+import { NetlifyBadgeGuard } from '@/components/store/netlify-badge-guard'
 import './globals.css'
 
 const anton = Anton({
@@ -52,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${anton.variable} ${archivo.variable}`}>
       <body className="font-sans">
+        <NetlifyBadgeGuard />
         {children}
         <Toaster position="top-center" richColors toastOptions={{ style: { fontFamily: 'var(--font-archivo)' } }} />
       </body>
