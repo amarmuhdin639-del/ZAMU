@@ -3,15 +3,24 @@
 import { useEffect } from 'react'
 
 /**
- * ZAMU badge guard — silently removes Netlify's injected "Powered by
- * Netlify" badge and the "Build your own site with Netlify" promo popup
- * for every visitor, on every page, including after soft navigations.
+ * ZAMU badge guard (layer 2) — removes Netlify's runtime-injected
+ * "Powered by Netlify" badge (#nl-badge-frame) and the "Build your own
+ * site" promo popup for every visitor, on every page, including after
+ * soft navigations.
  *
- * Two layers: a debounced sweep on DOM mutations + a 3 s watchdog sweep.
- * Our own DOM never contains "netlify" ids/classes (verified), so the
- * selectors below can never hit real store elements.
+ * Layer 1 is netlify/edge-functions/hud-stripper.ts: it strips the hud
+ * <script> from the HTML stream at the edge, so badge and popup usually
+ * never exist at all. This client guard is the safety net in case the
+ * edge strip ever fails or Netlify changes the shape.
+ *
+ * Each selector is swept in its OWN try/catch: one malformed selector
+ * must never disable the whole guard again.
  */
 const SELECTORS = [
+  '#nl-badge-frame',
+  'iframe[id^="nl-badge"]',
+  'iframe[srcdoc*="netlify" i]',
+  'script[src^="/.netlify/scripts/hud"]',
   '[data-netlify-badge]',
   '[id^="netlify-"]',
   '[class*="netlify-badge"]',
@@ -19,17 +28,19 @@ const SELECTORS = [
   'netlify-badge',
   'netlify-ai-assistant',
   'iframe[src*="netlify"]',
-  '[href^="https://www.netlify.com"]',
-].join(',')
+  'a[href^="https://www.netlify.com"]',
+]
 
 export function NetlifyBadgeGuard() {
   useEffect(() => {
     let queued = false
     const sweep = () => {
-      try {
-        document.querySelectorAll(SELECTORS).forEach((el) => el.remove())
-      } catch {
-        /* the guard must never break the page */
+      for (const sel of SELECTORS) {
+        try {
+          document.querySelectorAll(sel).forEach((el) => el.remove())
+        } catch {
+          /* a single bad selector must never kill the rest */
+        }
       }
     }
     const mo = new MutationObserver(() => {
