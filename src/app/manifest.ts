@@ -17,14 +17,14 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: 'en',
     categories: ['shopping', 'lifestyle'],
     icons: [
-      { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-      { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-      { src: '/icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      { src: '/icons/crown-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/icons/crown-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/icons/crown-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ],
     shortcuts: [
-      { name: 'Shop', url: '/shop', icons: [{ src: '/icons/icon-192.png', sizes: '192x192' }] },
-      { name: 'Track Order', url: '/track', icons: [{ src: '/icons/icon-192.png', sizes: '192x192' }] },
-      { name: 'Wishlist', url: '/wishlist', icons: [{ src: '/icons/icon-192.png', sizes: '192x192' }] },
+      { name: 'Shop', url: '/shop', icons: [{ src: '/icons/crown-192.png', sizes: '192x192' }] },
+      { name: 'Track Order', url: '/track', icons: [{ src: '/icons/crown-192.png', sizes: '192x192' }] },
+      { name: 'Wishlist', url: '/wishlist', icons: [{ src: '/icons/crown-192.png', sizes: '192x192' }] },
     ],
   }
 }

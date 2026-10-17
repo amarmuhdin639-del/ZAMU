@@ -37,8 +37,8 @@ export const metadata: Metadata = {
     title: 'ZAMU',
   },
   icons: {
-    icon: [{ url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
-    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+    icon: [{ url: '/icons/crown-192.png', sizes: '192x192', type: 'image/png' }],
+    apple: [{ url: '/icons/crown-apple-touch-180.png', sizes: '180x180', type: 'image/png' }],
   },
 }
 
