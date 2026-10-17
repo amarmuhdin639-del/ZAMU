@@ -7,7 +7,7 @@
  *  - never cache POST/PUT/PATCH/DELETE
  */
 
-const VERSION = 'zamu-v8'
+const VERSION = 'zamu-v9'
 const STATIC_CACHE = `${VERSION}-static`
 const PAGE_CACHE = `${VERSION}-pages`
 const OFFLINE_URL = '/offline.html'
@@ -16,6 +16,9 @@ const PRECACHE = [
   OFFLINE_URL,
   '/icons/icon-192.png',
   '/icons/icon-512.png',
+  '/icons/maskable-512.png',
+  '/icons/apple-touch-icon.png',
+  '/manifest.webmanifest',
 ]
 
 self.addEventListener('install', (event) => {
