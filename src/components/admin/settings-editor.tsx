@@ -2,7 +2,7 @@
 
 import { uploadMedia } from '@/lib/upload-client'
 import { useEffect, useState, useCallback } from 'react'
-import { Loader2, Plus, Trash2, Save, UploadCloud, PowerOff, X } from 'lucide-react'
+import { Loader2, Plus, Trash2, Save, UploadCloud, PowerOff, X, ArrowUp, ArrowDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,6 +16,8 @@ import { useLang } from '@/lib/i18n'
 import { jsonOrThrow } from '@/lib/http'
 import { isVideoUrl } from '@/lib/media'
 import { MediaBox } from '@/components/store/media-box'
+import { SocialIcon } from '@/components/store/social-icons'
+import { parseSocialLinks, stringifySocialLinks, SOCIAL_TYPES, type SocialLink, type SocialType } from '@/lib/social'
 
 type PaymentMethod = { id: string; name: string; accountNumber: string; accountName: string; phone: string | null; instructions: string | null; active: boolean; sortOrder: number }
 type DeliveryZone = { id: string; name: string; fee: number; estimatedDays: string | null; active: boolean; sortOrder: number }
@@ -33,9 +35,6 @@ const SETTING_FIELDS: { key: string; labelKey: string; hintKey?: string; long?: 
   { key: 'contactPhone', labelKey: 'admin.settings.fields.contactPhone' },
   { key: 'contactEmail', labelKey: 'admin.settings.fields.contactEmail' },
   { key: 'contactAddress', labelKey: 'admin.settings.fields.contactAddress' },
-  { key: 'contactWhatsapp', labelKey: 'admin.settings.fields.contactWhatsapp' },
-  { key: 'contactInstagram', labelKey: 'admin.settings.fields.contactInstagram' },
-  { key: 'contactTiktok', labelKey: 'admin.settings.fields.contactTiktok' },
   { key: 'storeLat', labelKey: 'admin.settings.fields.storeLat', hintKey: 'admin.settings.fields.storeLatHint' },
   { key: 'storeLng', labelKey: 'admin.settings.fields.storeLng', hintKey: 'admin.settings.fields.storeLngHint' },
   { key: 'aboutTitle', labelKey: 'admin.settings.fields.aboutTitle' },
@@ -56,6 +55,7 @@ export function AdminSettings() {
   const [loaded, setLoaded] = useState(false)
   const [busy, setBusy] = useState(false)
   const [heroImageUploading, setHeroImageUploading] = useState(false)
+  const [socialRows, setSocialRows] = useState<SocialLink[]>([])
 
   const load = useCallback(async () => {
     const getJson = async (url: string) => {
@@ -78,6 +78,11 @@ export function AdminSettings() {
       getJson('/api/admin/banners'),
     ])
     setSettings(s?.settings ?? {})
+    setSocialRows(parseSocialLinks(s?.settings?.socialLinks, {
+      whatsapp: s?.settings?.contactWhatsapp,
+      tiktok: s?.settings?.contactTiktok,
+      instagram: s?.settings?.contactInstagram,
+    }))
     setMethods(pm?.methods ?? [])
     setZones(dz?.zones ?? [])
     setDiscounts(dc?.discounts ?? [])
@@ -92,7 +97,7 @@ export function AdminSettings() {
   async function saveSettings() {
     setBusy(true)
     try {
-      const res = await fetch('/api/admin/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) })
+      const res = await fetch('/api/admin/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...settings, socialLinks: stringifySocialLinks(socialRows) }) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       toast.success(t('admin.settings.settingsSaved'))
@@ -101,6 +106,30 @@ export function AdminSettings() {
     } finally {
       setBusy(false)
     }
+  }
+
+  function updateSocialRow(i: number, patch: Partial<SocialLink>) {
+    setSocialRows((rows) => rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)))
+  }
+
+  function moveSocialRow(i: number, dir: -1 | 1) {
+    setSocialRows((rows) => {
+      const j = i + dir
+      if (j < 0 || j >= rows.length) return rows
+      const next = [...rows]
+      const tmp = next[i]
+      next[i] = next[j]
+      next[j] = tmp
+      return next
+    })
+  }
+
+  function addSocialRow() {
+    setSocialRows((rows) => [...rows, { type: 'tiktok', url: '' }])
+  }
+
+  function removeSocialRow(i: number) {
+    setSocialRows((rows) => rows.filter((_, idx) => idx !== i))
   }
 
   async function uploadHeroMedia(file: File | undefined) {
@@ -132,6 +161,7 @@ export function AdminSettings() {
       <Tabs defaultValue="store">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="store">{t('admin.settings.tabStore')}</TabsTrigger>
+          <TabsTrigger value="social">{t('admin.settings.tabSocial')}</TabsTrigger>
           <TabsTrigger value="categories">{t('admin.settings.tabCategories')}</TabsTrigger>
           <TabsTrigger value="payments">{t('admin.settings.tabPayments')}</TabsTrigger>
           <TabsTrigger value="delivery">{t('admin.settings.tabDelivery')}</TabsTrigger>
@@ -195,6 +225,62 @@ export function AdminSettings() {
             <Button onClick={saveSettings} disabled={busy} className="mt-5 rounded-full bg-ink text-xs uppercase tracking-wider hover:bg-flame">
               <Save className="mr-1.5 h-4 w-4" /> {busy ? t('admin.form.saving') : t('admin.settings.saveAll')}
             </Button>
+          </section>
+        </TabsContent>
+
+        {/* SOCIAL LINKS — the round buttons at the bottom of every page + contact page */}
+        <TabsContent value="social" className="mt-4 space-y-6">
+          <section className="rounded-2xl border border-border bg-card p-5">
+            <div>
+              <h2 className="font-display text-lg uppercase">{t('admin.settings.socialTitle')}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{t('admin.settings.socialHint')}</p>
+            </div>
+            <div className="mt-4 space-y-3">
+              {socialRows.map((row, i) => (
+                <div key={`${row.type}-${i}`} className="flex flex-wrap items-center gap-2 rounded-xl border border-border p-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border">
+                    <SocialIcon type={row.type} className="h-4 w-4" />
+                  </span>
+                  <select
+                    value={row.type}
+                    onChange={(e) => updateSocialRow(i, { type: e.target.value as SocialType })}
+                    className="h-9 rounded-md border border-border bg-background px-2 text-sm"
+                    aria-label={t('admin.settings.socialType')}
+                  >
+                    {SOCIAL_TYPES.map((st) => (
+                      <option key={st.type} value={st.type}>{st.label}</option>
+                    ))}
+                  </select>
+                  <Input
+                    value={row.url}
+                    onChange={(e) => updateSocialRow(i, { url: e.target.value })}
+                    placeholder={SOCIAL_TYPES.find((st) => st.type === row.type)?.placeholder ?? 'https://…'}
+                    className="min-w-[200px] flex-1"
+                    aria-label={t('admin.settings.socialValue')}
+                  />
+                  <Button type="button" size="sm" variant="ghost" disabled={i === 0} onClick={() => moveSocialRow(i, -1)} aria-label={t('admin.settings.socialUp')} className="px-2">
+                    <ArrowUp className="h-4 w-4" />
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" disabled={i === socialRows.length - 1} onClick={() => moveSocialRow(i, 1)} aria-label={t('admin.settings.socialDown')} className="px-2">
+                    <ArrowDown className="h-4 w-4" />
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => removeSocialRow(i)} aria-label={t('common.remove')} className="rounded-full text-destructive hover:text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              {socialRows.length === 0 && (
+                <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">{t('admin.settings.socialEmpty')}</p>
+              )}
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <Button type="button" variant="outline" onClick={addSocialRow} className="rounded-full text-xs uppercase tracking-wider">
+                <Plus className="mr-1 h-4 w-4" /> {t('admin.settings.socialAdd')}
+              </Button>
+              <Button onClick={saveSettings} disabled={busy} className="rounded-full bg-ink text-xs uppercase tracking-wider hover:bg-flame">
+                <Save className="mr-1.5 h-4 w-4" /> {busy ? t('admin.form.saving') : t('admin.settings.saveAll')}
+              </Button>
+            </div>
           </section>
         </TabsContent>
 

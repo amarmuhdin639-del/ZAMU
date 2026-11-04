@@ -1,16 +1,9 @@
 import type { Metadata } from 'next'
 import { getSettings, SETTING_DEFAULTS } from '@/lib/queries'
-import { Phone, Mail, MapPin, MessageCircle, Instagram } from 'lucide-react'
+import { MapPin } from 'lucide-react'
 import Link from 'next/link'
-
-/** TikTok has no lucide glyph — brand path drawn inline. */
-function TikTokIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
-      <path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
-    </svg>
-  )
-}
+import { SocialIcon } from '@/components/store/social-icons'
+import { parseSocialLinks, socialHref, socialLabel, socialDisplay } from '@/lib/social'
 
 export const metadata: Metadata = {
   title: 'Contact Us',
@@ -21,14 +14,21 @@ export const dynamic = 'force-dynamic'
 export default async function ContactPage() {
   const settings = await getSettings()
   const map = { ...SETTING_DEFAULTS, ...settings }
-  const wa = (map.contactWhatsapp ?? '').replace(/[^0-9]/g, '')
-
+  const socials = parseSocialLinks(map.socialLinks, {
+    whatsapp: map.contactWhatsapp,
+    tiktok: map.contactTiktok,
+    instagram: map.contactInstagram,
+  })
   const channels = [
-    { icon: Phone, label: 'Call Us', value: map.contactPhone, href: `tel:${map.contactPhone}`, cta: 'Call Now' },
-    { icon: MessageCircle, label: 'WhatsApp', value: map.contactWhatsapp, href: `https://wa.me/${wa}`, cta: 'Chat on WhatsApp' },
-    { icon: TikTokIcon, label: 'TikTok', value: `@${(map.contactTiktok ?? '').replace('@', '')}`, href: `https://tiktok.com/@${(map.contactTiktok ?? '').replace('@', '')}`, cta: 'Follow' },
-    { icon: Instagram, label: 'Instagram', value: `@${(map.contactInstagram ?? '').replace('@', '')}`, href: `https://instagram.com/${(map.contactInstagram ?? '').replace('@', '')}`, cta: 'Follow' },
-    { icon: Mail, label: 'Email', value: map.contactEmail, href: `mailto:${map.contactEmail}`, cta: 'Send email' },
+    { kind: 'phone', label: 'Call Us', value: map.contactPhone, href: `tel:${map.contactPhone}`, cta: 'Call Now' },
+    { kind: 'email', label: 'Email', value: map.contactEmail, href: `mailto:${map.contactEmail}`, cta: 'Send email' },
+    ...socials.map((s) => ({
+      kind: s.type as string,
+      label: socialLabel(s.type),
+      value: socialDisplay(s.type, s.url),
+      href: socialHref(s.type, s.url),
+      cta: s.type === 'whatsapp' ? 'Chat on WhatsApp' : 'Follow',
+    })),
   ].filter((c) => c.value)
 
   return (
@@ -49,7 +49,7 @@ export default async function ContactPage() {
             className="group flex flex-col rounded-2xl border border-border bg-card p-6 transition-all hover:-translate-y-0.5 hover:border-ink hover:shadow-lg"
           >
             <span className="flex h-11 w-11 items-center justify-center rounded-full bg-ink text-flame transition-colors group-hover:bg-flame group-hover:text-white">
-              <c.icon className="h-5 w-5" />
+              <SocialIcon type={c.kind} className="h-5 w-5" />
             </span>
             <span className="mt-4 font-display text-lg uppercase">{c.label}</span>
             <span className="mt-1 break-all text-sm text-muted-foreground">{c.value}</span>
