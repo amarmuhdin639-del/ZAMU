@@ -7,7 +7,7 @@
  *  - never cache POST/PUT/PATCH/DELETE
  */
 
-const VERSION = 'zamu-v11'
+const VERSION = 'zamu-v12'
 const STATIC_CACHE = `${VERSION}-static`
 const PAGE_CACHE = `${VERSION}-pages`
 const OFFLINE_URL = '/offline.html'
